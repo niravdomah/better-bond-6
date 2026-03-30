@@ -542,7 +542,9 @@ After the user confirms manual verification (or after the fix cycle completes), 
 Launch `spec-compliance-watchdog`:
 > "This is Call A — Analyze Compliance for Epic [N], Story [M]. Story file: [story path]. Test-design document: [test-design path]. Test-handoff document: [test-handoff path]. Compare every acceptance criterion and every test-design scenario against the actual implementation and test files. Return a structured compliance report. Do NOT modify any files. Do NOT commit. Do NOT use AskUserQuestion."
 
-**CRITICAL: Never pre-excuse QA fix-cycle changes in the watchdog prompt.** When a QA fix cycle changed behavior (added, removed, or modified features at the user's request), do NOT tell the watchdog to ignore those changes. The watchdog must detect all spec-vs-code drift — including intentional changes — so that the spec documents get updated. Pass the fix-cycle context as informational background only (e.g., "A QA fix cycle occurred: [description]"), NOT as an instruction to skip findings. The orchestrator handles resolution (Option A or B) after the watchdog reports.
+> **WARNING — NEVER SUPPRESS DRIFT FINDINGS**
+>
+> When composing the watchdog prompt, do NOT include instructions to ignore, skip, or excuse any changes — regardless of origin (QA fix cycle, user request, or otherwise). The watchdog must detect ALL spec-vs-code drift so that spec documents get updated. Pass fix-cycle context as informational background only (e.g., "A QA fix cycle occurred: [description]"), NOT as an instruction to skip findings. The orchestrator handles resolution (Option A or B) after the watchdog reports.
 
 **Orchestrator — Handle Results:**
 

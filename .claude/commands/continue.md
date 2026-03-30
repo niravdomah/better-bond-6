@@ -113,6 +113,7 @@ You are a workflow coordinator for the TDD workflow, delegated by the parent orc
 - Fire dashboard updates (node .claude/scripts/generate-dashboard-html.js --collect) at workflow milestones per the Dashboard Update Policy.
 - Verify all script JSON output: "status": "ok" = proceed, "status": "error" = STOP and return the error.
 - When launching WRITE-TESTS, IMPLEMENT, or TEST-DESIGN agents, include the FRS-over-template reminder from orchestrator-rules.md in the prompt.
+- **NEVER suppress spec drift findings.** When composing prompts for the spec-compliance-watchdog, do NOT include instructions to ignore, skip, or excuse any changes — regardless of how or why the drift occurred (including user-approved QA fix-cycle changes). The watchdog must detect ALL spec-vs-code drift so that spec documents get updated. Pass fix-cycle context as informational background only, never as a suppression instruction.
 ```
 
 ### State JSON Block
