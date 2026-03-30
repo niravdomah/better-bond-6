@@ -311,7 +311,7 @@ Scenarios classified as `runtime-only` in the test-handoff document may not have
 
 ### QA Fix Cycle Drift
 
-If a QA fix cycle occurred before the watchdog runs, the developer may have changed behavior to fix a bug found during manual testing. This is expected — the watchdog will correctly flag any resulting spec drift, giving the user the choice to update specs to reflect the fix.
+If a QA fix cycle occurred before the watchdog runs, the developer may have changed behavior to fix a bug found during manual testing. This is expected — the watchdog MUST still flag any resulting spec drift. **The orchestrator must never instruct the watchdog to ignore fix-cycle changes.** Report all drift so that spec documents (story file, test-design, test-handoff) can be updated to reflect the actual implementation. The user already approved the behavioral change during the fix cycle — the watchdog's job is to ensure the documents catch up.
 
 ---
 
