@@ -1,12 +1,14 @@
 # Test Design: App Shell with Navigation and Protected Layout
 
+> **Note:** This document was updated by the spec-compliance-watchdog to reflect the final implementation (approved by user). Changes: (1) Navigation links reduced from three to two — "Payments Made" link was not implemented; (2) /payments-made route stub was not created — only /payment-management stub exists; (3) LastChangedUser wiring updated to reflect caller-responsibility pattern — the API client does not automatically read from the authenticated session.
+
 ## Story Summary
 
 **Epic:** 1
 **Story:** 2
 **As an** operator
 **I want** a branded header with navigation links
-**So that** I can move between Dashboard, Payment Management, and Payments Made
+**So that** I can move between Dashboard and Payment Management
 
 ## Review Purpose
 
@@ -20,13 +22,13 @@ Its purpose is to:
 ## Business Behaviors Identified
 
 - All authenticated pages display a branded navigation bar with the MortgageMax logo
-- The navigation bar contains links to Dashboard, Payment Management, and Payments Made
+- The navigation bar contains links to Dashboard and Payment Management
 - Clicking a navigation link takes the operator to the correct page
 - The current page link is visually highlighted in the navigation bar
 - The operator's username or email is displayed in the header
 - Clicking Sign Out signs the operator out and redirects to the login page
 - The home page displays a "Dashboard" heading instead of the template placeholder
-- The API client includes a LastChangedUser header with the operator's identity on mutating requests
+- The API client includes a LastChangedUser header when the caller explicitly passes a user identity string (caller-responsibility pattern — the client does not read from the session automatically)
 - On mobile viewports, the navigation collapses into a hamburger menu
 - On desktop viewports, the full navigation bar with all links is visible
 
@@ -34,8 +36,8 @@ Its purpose is to:
 
 - **Template conflict (protected layout):** The existing `(protected)/layout.tsx` only calls `requireAuth()` and renders children with no navigation bar. The FRS requires a branded NavBar on all authenticated pages. The layout must be updated to include the NavBar component wrapping all protected content.
 - **Home page route:** The current `app/page.tsx` shows template placeholder content ("Welcome / Replace this with your feature implementation"). Per AC-7, this must be replaced with a "Dashboard" heading. The home page (`/`) should live inside the `(protected)` group so it requires authentication.
-- **Route stubs needed:** The story requires placeholder pages at `/payment-management` and `/payments-made` with simple headings, so navigation links have valid targets.
-- **LastChangedUser wiring:** The API client already supports a `lastChangedUser` parameter on `post()`, `put()`, and `del()` convenience methods. The story needs to ensure the authenticated session's username/email is passed through when components make mutating API calls. This is infrastructure wiring — no new API endpoint is called in this story.
+- **Route stub:** The story creates a placeholder page at `/payment-management` with a simple heading, so the navigation link has a valid target. No stub was created for `/payments-made` in this story — that route will be added when Epic 4 is implemented.
+- **LastChangedUser wiring:** The API client supports a `lastChangedUser` parameter on `post()`, `put()`, and `del()` convenience methods. The client includes the header only when the caller explicitly passes a user string — it does not automatically read from the authenticated session. Future stories that make mutating API calls are responsible for reading the session and passing the user identity to the API client.
 - **Active link styling:** Per the wireframe and design tokens, the active navigation link should use `text-secondary` (teal) with an underline. The tests should verify the active link is visually distinct without testing specific CSS classes.
 
 ## Test Scenarios / Review Examples
@@ -56,7 +58,7 @@ Its purpose is to:
 
 ---
 
-### 2. Navigation bar shows all three navigation links
+### 2. Navigation bar shows both navigation links
 
 | Setup | Value |
 | --- | --- |
@@ -70,7 +72,6 @@ Its purpose is to:
 | --- | --- |
 | Link 1 | "Dashboard" link is visible in the navigation |
 | Link 2 | "Payment Management" link is visible in the navigation |
-| Link 3 | "Payments Made" link is visible in the navigation |
 
 ---
 
@@ -105,7 +106,7 @@ Its purpose is to:
 | Expected | Value |
 | --- | --- |
 | Active link | The "Dashboard" link in the navigation appears highlighted (visually distinct from the other links) |
-| Other links | "Payment Management" and "Payments Made" links are not highlighted |
+| Other links | "Payment Management" link is not highlighted |
 
 ---
 
@@ -158,19 +159,20 @@ Its purpose is to:
 
 ---
 
-### 8. LastChangedUser header is included on mutating API calls
+### 8. LastChangedUser header is included when caller passes user identity
 
 | Setup | Value |
 | --- | --- |
-| User | Signed in as operator@example.com |
+| User | Caller passes "operator@example.com" as the user identity string to the API client |
 
 | Input | Value |
 | --- | --- |
-| Action | A component makes a PUT or POST API call |
+| Action | A component calls the API client's `post()`, `put()`, or `del()` method with a user identity string |
 
 | Expected | Value |
 | --- | --- |
 | HTTP header | The request includes a `LastChangedUser` header with the value "operator@example.com" |
+| Without user string | When no user string is passed, no `LastChangedUser` header is included |
 
 ## Edge and Alternate Examples
 
@@ -207,7 +209,6 @@ Its purpose is to:
 | --- | --- |
 | Link 1 | "Dashboard" link is visible |
 | Link 2 | "Payment Management" link is visible |
-| Link 3 | "Payments Made" link is visible |
 | User info | Operator's identity is visible |
 | Sign Out | "Sign Out" option is available |
 
@@ -226,14 +227,14 @@ Its purpose is to:
 
 | Expected | Value |
 | --- | --- |
-| All links | Dashboard, Payment Management, and Payments Made links are all visible |
+| All links | Dashboard and Payment Management links are both visible |
 | User info | Operator's identity is visible |
 | Sign Out | "Sign Out" button is visible |
 | Hamburger | No hamburger menu button is visible |
 
 ---
 
-### 12. Route stubs exist for Payment Management and Payments Made
+### 12. Route stub exists for Payment Management
 
 | Setup | Value |
 | --- | --- |
@@ -250,7 +251,7 @@ Its purpose is to:
 
 ---
 
-### 13. Navigation between all three pages preserves the navigation bar
+### 13. Navigation between pages preserves the navigation bar
 
 | Setup | Value |
 | --- | --- |
@@ -260,8 +261,7 @@ Its purpose is to:
 | --- | --- |
 | Step 1 | Visit Dashboard |
 | Step 2 | Click "Payment Management" |
-| Step 3 | Click "Payments Made" |
-| Step 4 | Click "Dashboard" |
+| Step 3 | Click "Dashboard" |
 
 | Expected | Value |
 | --- | --- |
@@ -277,6 +277,7 @@ Its purpose is to:
 - Role-based access control beyond single Operator role
 - Demo Reset button in the navigation (Epic 5)
 - Loading states and error handling (Epic 5)
+- /payments-made route stub (not implemented in this story — deferred to Epic 4)
 
 ## Coverage for WRITE-TESTS (AC to Example Mapping)
 
@@ -289,7 +290,7 @@ Its purpose is to:
 | AC-5 (Username displayed) | Scenario 5 |
 | AC-6 (Sign Out) | Scenario 6 |
 | AC-7 (Dashboard heading on home page) | Scenario 7 |
-| AC-8 (LastChangedUser header) | Scenario 8 |
+| AC-8 (LastChangedUser header — caller-responsibility) | Scenario 8 |
 | AC-9 (Mobile hamburger menu) | Scenarios 9, 10 |
 | AC-10 (Desktop full nav bar) | Scenario 11 |
 
@@ -298,7 +299,7 @@ Its purpose is to:
 - **Mock NextAuth session:** Tests will need to mock the authenticated session to provide operator identity (e.g., `operator@example.com`). Use `next-auth/react` session mock.
 - **Mock `next/navigation`:** Navigation tests need `useRouter` and `usePathname` mocks to verify routing and active link detection.
 - **Responsive tests:** For mobile vs desktop scenarios, use viewport resizing or media query mocks. If viewport simulation is impractical in unit tests, consider testing the hamburger menu component's visibility toggle directly.
-- **API client test (Scenario 8):** Test the API client helper functions directly — verify that `post()`, `put()`, and `del()` include the `LastChangedUser` header when a user identity is provided. This is a unit test of the client infrastructure, not a component rendering test.
+- **API client test (Scenario 8):** Test the API client helper functions directly — verify that `post()`, `put()`, and `del()` include the `LastChangedUser` header when a user identity string is explicitly passed by the caller. This is a unit test of the client infrastructure, not a component rendering test. The client does not read from the session automatically; that responsibility belongs to the calling component.
 - **Sign Out test (Scenario 6):** Mock `signOut` from `next-auth/react` and verify it is called when the Sign Out button is clicked. The redirect to the login page is handled by NextAuth's `callbackUrl` config.
 - **Template code to replace:** The `(protected)/layout.tsx` currently renders only `{children}`. It must be updated to wrap children in a NavBar + layout structure. The `app/page.tsx` must be moved into `(protected)` and updated to show "Dashboard".
 - **FRS is the source of truth:** Design tests against FRS requirements R31-R33, the story acceptance criteria, and the wireframe — not the existing template code.

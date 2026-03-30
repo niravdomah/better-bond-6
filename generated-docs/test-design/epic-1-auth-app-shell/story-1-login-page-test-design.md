@@ -1,5 +1,12 @@
 # Test Design: Login Page with MortgageMax Branding
 
+> **Note:** This document was updated by the spec-compliance-watchdog to reflect the final implementation (approved by user).
+>
+> Changes made:
+> - Example credentials updated from `operator@example.com / Operator123!` to `admin@example.com / Admin123!` throughout — the operator@example.com user was never created in auth.config.ts.
+> - Key Decisions section updated to reflect that the 4-role simplification was NOT carried out.
+> - Scenario 8 (already signed-in redirect) updated to reflect that this behavior is not implemented in the current build.
+
 ## Story Summary
 
 **Epic:** 1
@@ -22,7 +29,7 @@ Its purpose is to:
 - Unauthenticated users are redirected to the login page when trying to access any protected page
 - The login page displays MortgageMax branding (logo and "Commission Payments System" heading)
 - Valid credentials authenticate the operator and redirect to the Dashboard
-- Already-authenticated operators are redirected away from the login page to the Dashboard
+- Already-authenticated operators visiting the login page are NOT automatically redirected (this behavior was not implemented — see Scenario 8)
 - Invalid credentials display an error message
 - Empty/missing fields trigger validation messages
 - The Sign In button shows a loading state while authentication is in progress
@@ -31,7 +38,7 @@ Its purpose is to:
 
 - The template currently uses "Email" as the username field label, but the FRS and wireframe refer to "Username." The story should rename the field label from "Email" to "Username" to match the FRS. The input type may also change from `email` to `text` to support non-email usernames.
 - The template includes a "Don't have an account? Sign up" link in the login form footer. The FRS does not mention self-registration. This link should be removed during implementation.
-- The template uses 4 demo roles. Per the FRS, there is only one role (Operator). The demo user list should be simplified to a single operator credential set.
+- The template uses 4 demo roles. Per the FRS, there is only one role (Operator). However, the 4-role system was NOT simplified during implementation — the `UserRole` enum and demo-user list in `auth.config.ts` remain as ADMIN, POWER_USER, STANDARD_USER, READ_ONLY. The demo credential used in examples below is `admin@example.com / Admin123!` (the first valid demo user in the system).
 
 ## Test Scenarios / Review Examples
 
@@ -63,8 +70,8 @@ Its purpose is to:
 
 | Input | Value |
 | --- | --- |
-| Username | operator@example.com |
-| Password | Operator123! |
+| Username | admin@example.com |
+| Password | Admin123! |
 | Action | Click "Sign In" |
 
 | Expected | Value |
@@ -81,7 +88,7 @@ Its purpose is to:
 
 | Input | Value |
 | --- | --- |
-| Username | operator@example.com |
+| Username | admin@example.com |
 | Password | WrongPassword99 |
 | Action | Click "Sign In" |
 
@@ -120,7 +127,7 @@ Its purpose is to:
 | Input | Value |
 | --- | --- |
 | Username | (empty) |
-| Password | Operator123! |
+| Password | Admin123! |
 | Action | Click "Sign In" |
 
 | Expected | Value |
@@ -138,7 +145,7 @@ Its purpose is to:
 
 | Input | Value |
 | --- | --- |
-| Username | operator@example.com |
+| Username | admin@example.com |
 | Password | (empty) |
 | Action | Click "Sign In" |
 
@@ -157,8 +164,8 @@ Its purpose is to:
 
 | Input | Value |
 | --- | --- |
-| Username | operator@example.com |
-| Password | Operator123! |
+| Username | admin@example.com |
+| Password | Admin123! |
 | Action | Click "Sign In" (authentication in progress) |
 
 | Expected | Value |
@@ -171,9 +178,11 @@ Its purpose is to:
 
 ### 8. Already signed-in user visits login page
 
+> **Note:** This behavior was not implemented. The signin page (`app/auth/signin/page.tsx`) is a pure client-side component and performs no session check on load. An already-authenticated user who navigates directly to `/auth/signin` will see the login form rather than being redirected to the Dashboard. This scenario remains unimplemented and must be verified manually to confirm the absence of a redirect, not the presence of one.
+
 | Setup | Value |
 | --- | --- |
-| User | Already signed in as operator@example.com |
+| User | Already signed in as admin@example.com |
 
 | Input | Value |
 | --- | --- |
@@ -181,7 +190,7 @@ Its purpose is to:
 
 | Expected | Value |
 | --- | --- |
-| Result | Operator is redirected to the home page (Dashboard) |
+| Result | No automatic redirect occurs — the operator sees the login form (redirect not implemented) |
 
 ## Edge and Alternate Examples
 
@@ -226,3 +235,4 @@ Its purpose is to:
 - Role-based access control beyond single Operator role
 - Password reset or recovery
 - Session expiration handling
+- Redirect of already-authenticated users away from the login page (not implemented — see Scenario 8)

@@ -2,6 +2,14 @@
 
 > Engineering document for downstream agents. Not reviewed by the BA.
 
+> **Note:** This document was updated by the spec-compliance-watchdog to reflect the final implementation (approved by user).
+>
+> Changes made:
+> - AC-4 mapping updated: redirect for already-authenticated users is not implemented. Example 8 now documents the absence of this redirect.
+> - Scenario 8 testability classification note updated to reflect the implementation gap.
+> - Runtime Verification Checklist updated: the "already signed in" item now confirms the missing redirect rather than verifying its presence.
+> - Mock strategy note for Example 8 updated accordingly.
+
 **Source:** [story-1-login-page-test-design.md](./story-1-login-page-test-design.md)
 **Epic:** 1 | **Story:** 1
 
@@ -12,7 +20,7 @@ Reference the AC-N identifiers from the story file. Every AC from the story MUST
 - AC-1: Unauthenticated users are redirected to the login page → Example 9
 - AC-2: Login page shows MortgageMax logo and "Commission Payments System" heading → Example 1
 - AC-3: Valid credentials redirect to Dashboard → Example 2
-- AC-4: Already signed in redirects to Dashboard → Example 8
+- AC-4: Already signed in redirects to Dashboard → **Not implemented.** Example 8 documents that no redirect occurs. No automated test is expected to assert a redirect for this AC. Manual verification confirms the redirect is absent.
 - AC-5: Invalid credentials show error message → Example 3, Example 4
 - AC-6: Empty fields show validation message → Example 5, Example 6, Example 10
 - AC-7: Loading state on Sign In button during auth → Example 7
@@ -32,8 +40,11 @@ Reference the AC-N identifiers from the story file. Every AC from the story MUST
 - Mock strategy:
   - Mock `@/lib/auth/auth-client` (`signIn` function) to control auth outcomes
   - Mock `next/navigation` (`useRouter`, `useSearchParams`) for redirect assertions
-  - For Example 8 (already signed in redirect): this is a server-side redirect via middleware or layout — classify as runtime-only
+  - For Example 8 (already signed-in): the signin page has no session check on load — this scenario is not testable by automated means and is classified runtime-only. Manual verification should confirm that NO redirect occurs (the login form is displayed to an already-authenticated user).
   - For Example 9 (unauthenticated redirect): this is a middleware/layout redirect — classify as runtime-only
+- Demo credentials for test fixtures (valid in development):
+  - Username: `admin@example.com` | Password: `Admin123!` (ADMIN role)
+  - Note: `operator@example.com` does not exist in auth.config.ts — do not use it in tests
 - Important ambiguity flags:
   - The template currently labels the first field "Email" with type="email". The FRS calls it "Username." Implementation should change the label and possibly the input type. Tests should assert against "Username" label per the FRS.
   - The template shows "Invalid credentials" as the error message text. The exact error message wording is not specified in the FRS. Tests should check for the presence of an error alert rather than exact wording.
@@ -49,7 +60,7 @@ Reference the AC-N identifiers from the story file. Every AC from the story MUST
 | 5. Empty username field on submit | Unit-testable (RTL) | HTML required attribute prevents submission, or form validation fires |
 | 6. Empty password field on submit | Unit-testable (RTL) | HTML required attribute prevents submission, or form validation fires |
 | 7. Loading state while authenticating | Unit-testable (RTL) | Mock signIn to pend, assert button text and disabled state |
-| 8. Already signed-in user visits login page | Runtime-only | Requires server-side session check and redirect via middleware or server component |
+| 8. Already signed-in user visits login page | Runtime-only (gap) | Not implemented — signin page has no session check. Manual verification confirms redirect is absent, not present. |
 | 9. Unauthenticated user tries to access protected page | Runtime-only | Requires Next.js middleware/layout auth guard to trigger redirect |
 | 10. Both fields empty on submit | Unit-testable (RTL) | HTML required attributes prevent submission |
 
@@ -58,4 +69,4 @@ Reference the AC-N identifiers from the story file. Every AC from the story MUST
 These items cannot be verified by automated tests and must be checked during QA manual verification:
 
 - [ ] Visiting any protected page (e.g., /payment-management) without signing in redirects to the login page
-- [ ] Visiting the login page while already signed in redirects to the home page (Dashboard)
+- [ ] Visiting the login page while already signed in does NOT redirect to the Dashboard — the login form is displayed (AC-4 redirect is not implemented in the current build)
