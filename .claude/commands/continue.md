@@ -341,7 +341,7 @@ Launch code-reviewer Call B:
 After Call B returns:
 Check if Call B's response indicates a non-routable component (Route: N/A).
 
-If NON-ROUTABLE: Display Call B's component-only note to the user, then proceed directly to Call C (auto-approve). The commit should note "Manual verification: auto-skipped (component not yet reachable in the app)". Do NOT return NEEDS_APPROVAL — skip straight to Call C.
+If NON-ROUTABLE: Display Call B's component-only note to the user, then auto-proceed to spec compliance check with verification status `auto-skipped`. Do NOT return NEEDS_APPROVAL for manual verification — the user can't reach the component in the browser yet.
 
 If ROUTABLE: Return with "NEEDS_APPROVAL:" followed by:
 1. The quality gate results (in plain, non-technical language)
@@ -359,7 +359,21 @@ See the **QA Fix Cycle** section in orchestrator-rules.md for the full coordinat
 2. Launch coordinator: developer fixes → returns NEEDS_APPROVAL with fix summary (no tests or quality gates — those run once in Call C)
 3. Present fix summary → `AskUserQuestion` for re-verification → **fresh turn**
 4. If "Issues found" again → repeat (each cycle gets fresh hooks)
-5. If passed/skipped → launch coordinator for Call C (which re-runs all quality gates since code changed)
+5. If passed/skipped → proceed to spec compliance check (see below), then Call C
+
+**Spec Compliance Check (Gate 6 — MANDATORY between manual verification and Call C):**
+
+After manual verification passes (or is skipped), and BEFORE Call C, the spec-compliance-watchdog MUST run. See the full Spec Compliance Check section in orchestrator-rules.md for details. In summary:
+
+1. Launch `spec-compliance-watchdog` Call A to analyze compliance for Epic [N], Story [M]. Pass the story file path, test-design path, and test-handoff path. The watchdog compares every AC and test-design scenario against actual implementation and test files.
+
+2. **If PASS:** Display "Spec compliance check passed" and proceed to Call C.
+
+3. **If FAIL:** Return with "NEEDS_APPROVAL:" showing the compliance report. Ask user: "Fix the code to match the specs" (Option A) or "Update the specs to match the code" (Option B).
+   - Option A: Launch fix coordinator → re-run watchdog to verify → proceed to Call C (must re-run quality gates since code changed)
+   - Option B: Launch watchdog Call B to update spec documents → proceed to Call C (stage generated-docs changes)
+
+4. After spec compliance resolves → proceed to Call C
 
 ---
 
@@ -387,8 +401,8 @@ The coordinator completed Call A and needs user approval.
    - The base coordinator instructions (same as Step 2)
    - The user's approval decision and any feedback
    - Instructions for what to do next (Call B, revisions, etc.)
-   - For QA Call C after manual verification: `"Launch code-reviewer Call C: 'The user confirmed manual verification. Status: [passed|auto-skipped|skipped]. [If deferred stories were verified: Also mark stories N, M as deferred-passed.] Proceed to commit and transition to COMPLETE. Do NOT run quality gates again.' After it returns, fire dashboard update. Display its return message — it contains the /clear + /continue instruction. STOP after displaying it."`
-   - For QA "Issues found": follow the **QA Fix Cycle** in orchestrator-rules.md. Use `AskUserQuestion` to get the issue description (fresh turn), then launch a fix-cycle coordinator that delegates to developer + code-reviewer Call A + Call B, returning NEEDS_APPROVAL for re-verification. **Never fix issues directly from the parent orchestrator.**
+   - For QA after manual verification passes/skipped: **First run the spec-compliance-watchdog** before Call C. Launch a coordinator that runs `spec-compliance-watchdog` Call A for the current epic/story. If it passes, proceed to Call C. If it fails, return NEEDS_APPROVAL with the compliance report and options (fix code vs update specs). See the Spec Compliance Check instructions in the QA phase section above for the full flow. Only after spec compliance resolves, launch Call C: `"Launch code-reviewer Call C: 'The user confirmed manual verification. Status: [passed|skipped]. Spec compliance: [passed|resolved]. [If deferred stories were verified: Also mark stories N, M as deferred-passed.] Proceed to commit and transition to COMPLETE. [If no fix cycle occurred: Do NOT run quality gates again.] [If fix cycle or spec-compliance code fix occurred: Re-run all quality gates before committing.]' After it returns, fire dashboard update. Display its return message — it contains the /clear + /continue instruction. STOP after displaying it."`
+   - For QA "Issues found": follow the **QA Fix Cycle** in orchestrator-rules.md. Use `AskUserQuestion` to get the issue description (fresh turn), then launch a fix-cycle coordinator that delegates to developer + code-reviewer Call A + Call B, returning NEEDS_APPROVAL for re-verification. **Never fix issues directly from the parent orchestrator.** After the fix cycle resolves, proceed to the spec compliance check before Call C.
 
 ### If the response does NOT contain "NEEDS_APPROVAL:"
 
