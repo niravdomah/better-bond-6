@@ -5,9 +5,11 @@
 **Source:** [story-1-dashboard-charts-summary-test-design.md](./story-1-dashboard-charts-summary-test-design.md)
 **Epic:** 2 | **Story:** 1
 
+> **Note:** This document was updated by the spec-compliance-watchdog to reflect the final implementation (approved by user). AC-10 ("Payments Made (Last 14 Days)") was not implemented. Its mapping entry has been marked accordingly. All "six components" references have been updated to "five components".
+
 ## Coverage for WRITE-TESTS
 
-- AC-1: Fetch dashboard data and display six components on load -> Example 1
+- AC-1: Fetch dashboard data and display five components on load -> Example 1
 - AC-2: Show loading skeletons while data is loading -> Example 2
 - AC-3: Show error banner when API call fails -> Example 3
 - AC-4: Retry button re-fetches dashboard data -> Example 4
@@ -16,7 +18,7 @@
 - AC-7: Payments Ready bar chart shows counts by commission type -> Example 6
 - AC-8: Parked Payments bar chart shows counts by commission type -> Example 6
 - AC-9: Parked Payments Aging Report shows three range buckets -> Example 7
-- AC-10: Payments Made (Last 14 Days) shows count -> Example 1
+- AC-10: ~~Payments Made (Last 14 Days) shows count~~ **NOT IMPLEMENTED** — no test coverage; card was not built
 - AC-11: Dashboard heading visible at top -> Example 1
 - AC-12: Desktop layout uses two-column grid -> Example 8
 - AC-13: Mobile layout stacks to single column -> Example 8
@@ -26,7 +28,7 @@
 - Only generate executable tests from examples in the test-design document
 - Do not invent behavior not represented there or explicitly approved
 - Preferred render scope: full page (render `DashboardPage` component)
-- The existing `app/(protected)/page.tsx` is a placeholder with just a heading. The FRS requires a full dashboard with six components. Tests should be designed against the FRS requirements, not the current placeholder.
+- The dashboard renders five components: two monetary summary cards ("Total Value Ready for Payment", "Total Value of Parked Payments"), two bar charts ("Payments Ready for Payment", "Parked Payments"), and one aging report chart ("Parked Payments Aging Report"). The "Payments Made (Last 14 Days)" card was not built.
 - Suggested primary assertions:
   - Verify text content of headings, card labels, and monetary values using `getByRole('heading')` and `getByText()`
   - Verify loading skeletons appear when API response is pending (use `findByText` or `waitFor` patterns)
@@ -46,7 +48,7 @@
 
 | Scenario | Category | Reason |
 | --- | --- | --- |
-| 1. Dashboard loads and displays all six components | Unit-testable (RTL) | Component renders correct content based on mocked API data |
+| 1. Dashboard loads and displays all five components | Unit-testable (RTL) | Component renders correct content based on mocked API data |
 | 2. Loading state shows skeleton placeholders | Unit-testable (RTL) | Component renders skeletons when data is pending |
 | 3. API failure shows error banner with Retry | Unit-testable (RTL) | Component renders error state based on rejected API call |
 | 4. Clicking Retry re-fetches data successfully | Unit-testable (RTL) | Button click triggers re-fetch, component re-renders with data |

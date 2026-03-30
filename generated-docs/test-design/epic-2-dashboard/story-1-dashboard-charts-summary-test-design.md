@@ -1,5 +1,7 @@
 # Test Design: Dashboard with Charts and Summary Cards
 
+> **Note:** This document was updated by the spec-compliance-watchdog to reflect the final implementation (approved by user). The "Payments Made (Last 14 Days)" card (AC-10) was not implemented. The dashboard renders five components, not six. All scenario references to the sixth card and `TotalPaymentCountInLast14Days` display have been removed accordingly.
+
 ## Story Summary
 
 **Epic:** 2
@@ -19,7 +21,7 @@ Its purpose is to:
 
 ## Business Behaviors Identified
 
-- Dashboard page loads data from the API and displays six components: two monetary summary cards, two bar charts by commission type, one aging report chart, and one "last 14 days" metric card
+- Dashboard page loads data from the API and displays five components: two monetary summary cards, two bar charts by commission type, and one aging report chart
 - While data is loading, skeleton placeholders are shown for every card and chart
 - If the API call fails, an error banner is displayed with a Retry button
 - Clicking Retry re-fetches the dashboard data
@@ -34,15 +36,16 @@ Its purpose is to:
 - **Currency formatting edge case:** The story specifies `Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' })`. The FRS says "R 1 234 567,89" format. The `en-ZA` Intl formatter produces "R" followed by a non-breaking space. The examples below use the FRS-specified format. No BA decision needed unless the exact whitespace character matters for display.
 - **Zero-value handling:** The story does not specify what happens when all payment amounts are zero (e.g., no READY or PARKED payments). The examples below assume zero values are displayed as "R 0,00" and bar charts show zero-height bars or empty charts. This seems reasonable but is surfaced for awareness.
 - **Agency Summary grid is out of scope for this story.** Story 2 covers the Agency Summary grid. This story fetches `PaymentsByAgency` data but does not render it.
+- **"Payments Made (Last 14 Days)" card not implemented (AC-10).** The `TotalPaymentCountInLast14Days` field is fetched from the API but is not displayed on the dashboard. This was removed from the implementation.
 
 ## Test Scenarios / Review Examples
 
-### 1. Dashboard loads and displays all six components
+### 1. Dashboard loads and displays all five components
 
 | Setup | Value |
 | --- | --- |
 | User | Signed-in operator |
-| API response | `PaymentStatusReport` has 4 items (READY/Bond Comm, READY/Manual, PARKED/Bond Comm, PARKED/Manual), `ParkedPaymentsAgingReport` has 3 items, `TotalPaymentCountInLast14Days` = 42 |
+| API response | `PaymentStatusReport` has 4 items (READY/Bond Comm, READY/Manual, PARKED/Bond Comm, PARKED/Manual), `ParkedPaymentsAgingReport` has 3 items |
 
 | Input | Value |
 | --- | --- |
@@ -56,7 +59,6 @@ Its purpose is to:
 | "Payments Ready for Payment" chart | Bar chart visible with bars for "Bond Comm" and "Manual Payments" |
 | "Parked Payments" chart | Bar chart visible with bars for "Bond Comm" and "Manual Payments" |
 | "Parked Payments Aging Report" chart | Bar chart visible with bars for "1-3 Days", "4-7 Days", ">7 Days" |
-| "Payments Made (Last 14 Days)" card | Shows "42" |
 
 ---
 
@@ -73,7 +75,7 @@ Its purpose is to:
 
 | Expected | Value |
 | --- | --- |
-| Skeleton placeholders | Visible for each of the six card/chart areas |
+| Skeleton placeholders | Visible for each of the five card/chart areas |
 | Actual data | Not yet displayed |
 
 ---
@@ -111,7 +113,7 @@ Its purpose is to:
 | Expected | Value |
 | --- | --- |
 | Error banner | Disappears |
-| Dashboard components | All six components render with data |
+| Dashboard components | All five components render with data |
 
 ---
 
@@ -188,7 +190,7 @@ Its purpose is to:
 
 | Setup | Value |
 | --- | --- |
-| API response | PaymentStatusReport items all have TotalPaymentAmount = 0 and PaymentCount = 0. TotalPaymentCountInLast14Days = 0. |
+| API response | PaymentStatusReport items all have TotalPaymentAmount = 0 and PaymentCount = 0. |
 
 | Input | Value |
 | --- | --- |
@@ -198,7 +200,6 @@ Its purpose is to:
 | --- | --- |
 | "Total Value Ready for Payment" | Displays "R 0,00" |
 | "Total Value of Parked Payments" | Displays "R 0,00" |
-| "Payments Made (Last 14 Days)" | Shows "0" |
 | Bar charts | Render with no visible bars (or zero-height bars) |
 
 ---
@@ -241,3 +242,4 @@ Its purpose is to:
 - Navigation to Payment Management from agency row (covered in Story 2, per R9)
 - Agency dropdown/selector for filtering (covered in Story 2)
 - Any park/unpark/initiate payment functionality (Epic 3)
+- "Payments Made (Last 14 Days)" card display — AC-10 was not implemented in this story
