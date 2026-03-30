@@ -136,7 +136,7 @@ Its purpose is to:
 
 ---
 
-### 6. "Go" button navigates to Payment Management for that agency
+### 6. "Go" button shows confirmation dialog and navigates on confirm
 
 | Setup | Value |
 | --- | --- |
@@ -149,7 +149,9 @@ Its purpose is to:
 
 | Expected | Value |
 | --- | --- |
-| Navigation | User is taken to `/payment-management?agency=ABC%20Properties` |
+| Confirmation dialog | A dialog appears asking the user to confirm navigation to Payment Management for "ABC Properties" |
+| On confirm | User is navigated to `/payment-management?agency=ABC%20Properties` |
+| On cancel | Dialog closes, user remains on Dashboard |
 
 ---
 
@@ -246,7 +248,7 @@ Its purpose is to:
 
 | Input | Value |
 | --- | --- |
-| Action | Click "Go" on the "Smith & Jones Properties" row |
+| Action | Click "Go" on the "Smith & Jones Properties" row, then confirm in the dialog |
 
 | Expected | Value |
 | --- | --- |
@@ -336,7 +338,7 @@ Its purpose is to:
 
 - **Mock the dashboard API** (`getDashboard`) as done in Story 1 tests — the Agency Summary data comes from the same `PaymentsByAgency` field in the dashboard response.
 - **Agency filtering requires lifting state:** The tests need to verify that selecting an agency row causes the existing chart/card components to re-render with filtered data. The `DashboardContent` component currently renders charts from unfiltered data — implementation will need to add selection state and filtering logic.
-- **Test navigation with `router.push` mock:** The "Go" button navigation to `/payment-management?agency={name}` should be tested by mocking Next.js navigation and asserting the correct URL is constructed.
+- **Test navigation with `router.push` mock:** The "Go" button opens a confirmation dialog (Shadcn AlertDialog) before navigating. Tests should verify the dialog appears on click, that `router.push` is called with the correct URL only after confirming, and that cancelling closes the dialog without navigating.
 - **Currency format helper reuse:** The `formatZAR` utility from Story 1 should be reused for the Agency Summary table monetary columns.
 - **Row selection visual feedback:** Test that clicking a row applies a visual distinction (e.g., a CSS class or aria attribute). Use accessible queries where possible — consider `aria-selected` on the table row.
 - **Filtering data shape:** The `PaymentStatusReport` and `ParkedPaymentsAgingReport` arrays have `AgencyName` fields per the API spec's item schemas. Implementation will filter these arrays by the selected agency name.
