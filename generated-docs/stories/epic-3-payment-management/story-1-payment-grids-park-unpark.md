@@ -26,7 +26,7 @@
 
 ### Main Grid - READY Payments (R13)
 - [ ] AC-7: Given payment data has loaded, when I look at the Main Grid, then I see all payments with Status = READY (not PARKED, not PROCESSED) for the selected agency
-- [ ] AC-8: Given payment data has loaded, when I look at the Main Grid columns, then I see: Agency Name, Batch ID, Claim Date, Agent Name & Surname, Bond Amount, Commission Type, Commission %, Grant Date, Reg Date, Bank, Commission Amount, VAT, Status
+- [ ] AC-8: Given payment data has loaded, when I look at the Main Grid columns, then I see: Agency Name, Batch ID, Claim Date, Agent Name & Surname, Bond Amount, Commission Type, Grant Date, Reg Date, Bank, Commission Amount, VAT, Status
 - [ ] AC-9: Given the Main Grid has payments, when I look at the grid header, then I see the count of READY payments displayed (e.g., "Ready Payments (12)")
 
 ### Parked Grid (R14)
@@ -101,7 +101,7 @@
 - Read `agency` from the URL search params (`useSearchParams`). If absent, redirect to `/` (Dashboard).
 - Use the API client (`lib/api/client.ts`) for all API calls. Define endpoint functions in `lib/api/endpoints.ts`.
 - `GET /v1/payments` returns `PaymentReadList` with a `PaymentList` array of `PaymentRead` objects. Filter client-side by `Status` to split into READY and PARKED grids.
-- The `PaymentRead` schema fields: Id, Reference, AgencyName, ClaimDate, AgentName, AgentSurname, BondAmount, CommissionType, GrantDate, RegistrationDate, Bank, CommissionAmount, VAT, Status, BatchId, LastChangedUser, LastChangedDate. Note: no `CommissionPercentage` field exists in the API schema — "Commission %" column should display what is available or be omitted if the field is not returned.
+- The `PaymentRead` schema fields: Id, Reference, AgencyName, ClaimDate, AgentName, AgentSurname, BondAmount, CommissionType, GrantDate, RegistrationDate, Bank, CommissionAmount, VAT, Status, BatchId, LastChangedUser, LastChangedDate. Note: no `CommissionPercentage` field exists in the API schema — "Commission %" column is omitted from the grids.
 - Client-side filtering (R15/BR8): filter the loaded payment list without making new API requests. Filter bar fields: search text, Claim Date, Status.
 - Currency formatting: use `Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' })` for commission amounts in modals and grid.
 - Use Shadcn `<Table>`, `<Checkbox>`, `<Button>`, `<Dialog>`, `<Input>`, `<Select>`, `<Skeleton>` components.
