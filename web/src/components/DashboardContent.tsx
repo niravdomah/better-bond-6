@@ -20,55 +20,81 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import AgencySummaryTable from '@/components/AgencySummaryTable';
 
 type LoadingState = 'loading' | 'error' | 'success';
 
+interface DashboardContentProps {
+  selectedAgency?: string | null;
+  onSelectAgency?: (agency: string | null) => void;
+}
+
 /**
  * Derive the total payment amount for a given status from PaymentStatusReport.
+ * Optionally filtered by agency name.
  */
 function sumByStatus(
   report: PaymentStatusReportItem[] | undefined,
   status: string,
+  agencyName?: string | null,
 ): number {
   if (!report) return 0;
-  return report
-    .filter((item) => item.Status === status)
-    .reduce((sum, item) => sum + (item.TotalPaymentAmount ?? 0), 0);
+  let filtered = report.filter((item) => item.Status === status);
+  if (agencyName) {
+    filtered = filtered.filter((item) => item.AgencyName === agencyName);
+  }
+  return filtered.reduce(
+    (sum, item) => sum + (item.TotalPaymentAmount ?? 0),
+    0,
+  );
 }
 
 /**
  * Derive bar chart data for a given status, mapping CommissionType to short labels.
+ * Optionally filtered by agency name.
  */
 function chartDataByStatus(
   report: PaymentStatusReportItem[] | undefined,
   status: string,
+  agencyName?: string | null,
 ): { name: string; count: number }[] {
   if (!report) return [];
-  return report
-    .filter((item) => item.Status === status)
-    .map((item) => ({
-      name:
-        item.CommissionType === 'Bond Registration Commission'
-          ? 'Bond Comm'
-          : (item.CommissionType ?? 'Unknown'),
-      count: item.PaymentCount ?? 0,
-    }));
+  let filtered = report.filter((item) => item.Status === status);
+  if (agencyName) {
+    filtered = filtered.filter((item) => item.AgencyName === agencyName);
+  }
+  return filtered.map((item) => ({
+    name:
+      item.CommissionType === 'Bond Registration Commission'
+        ? 'Bond Comm'
+        : (item.CommissionType ?? 'Unknown'),
+    count: item.PaymentCount ?? 0,
+  }));
 }
 
 /**
  * Derive aging report chart data.
+ * Optionally filtered by agency name.
  */
 function agingChartData(
   report: ParkedPaymentsAgingReportItem[] | undefined,
+  agencyName?: string | null,
 ): { name: string; count: number }[] {
   if (!report) return [];
-  return report.map((item) => ({
+  let filtered = [...report];
+  if (agencyName) {
+    filtered = filtered.filter((item) => item.AgencyName === agencyName);
+  }
+  return filtered.map((item) => ({
     name: item.Range ?? '',
     count: item.PaymentCount ?? 0,
   }));
 }
 
-export default function DashboardContent() {
+export default function DashboardContent({
+  selectedAgency,
+  onSelectAgency,
+}: DashboardContentProps) {
   const [data, setData] = useState<PaymentsDashboardRead | null>(null);
   const [loadingState, setLoadingState] = useState<LoadingState>('loading');
   const [fetchTrigger, setFetchTrigger] = useState(0);
@@ -135,129 +161,160 @@ export default function DashboardContent() {
     );
   }
 
-  // Success state: render all 6 components
-  const readyTotal = sumByStatus(data?.PaymentStatusReport, 'READY');
-  const parkedTotal = sumByStatus(data?.PaymentStatusReport, 'PARKED');
-  const readyChartData = chartDataByStatus(data?.PaymentStatusReport, 'READY');
+  // Success state: render dashboard components filtered by selected agency
+  const agencyFilter = selectedAgency ?? null;
+  const readyTotal = sumByStatus(
+    data?.PaymentStatusReport,
+    'READY',
+    agencyFilter,
+  );
+  const parkedTotal = sumByStatus(
+    data?.PaymentStatusReport,
+    'PARKED',
+    agencyFilter,
+  );
+  const readyChartData = chartDataByStatus(
+    data?.PaymentStatusReport,
+    'READY',
+    agencyFilter,
+  );
   const parkedChartData = chartDataByStatus(
     data?.PaymentStatusReport,
     'PARKED',
+    agencyFilter,
   );
-  const agingData = agingChartData(data?.ParkedPaymentsAgingReport);
+  const agingData = agingChartData(
+    data?.ParkedPaymentsAgingReport,
+    agencyFilter,
+  );
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {/* Total Value Ready for Payment */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Total Value Ready for Payment</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-3xl font-bold">{formatZAR(readyTotal)}</p>
-        </CardContent>
-      </Card>
+    <>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Total Value Ready for Payment */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Value Ready for Payment</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">{formatZAR(readyTotal)}</p>
+          </CardContent>
+        </Card>
 
-      {/* Total Value of Parked Payments */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Total Value of Parked Payments</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-3xl font-bold">{formatZAR(parkedTotal)}</p>
-        </CardContent>
-      </Card>
+        {/* Total Value of Parked Payments */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Value of Parked Payments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold">{formatZAR(parkedTotal)}</p>
+          </CardContent>
+        </Card>
 
-      {/* Payments Ready for Payment Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Payments Ready for Payment</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {readyChartData.length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={readyChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#4f46e5" />
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="mt-2 flex justify-around text-sm">
-                {readyChartData.map((item, index) => (
-                  <span key={`ready-${item.name}-${index}`}>
-                    {item.name}: {item.count}
-                  </span>
-                ))}
-              </div>
-            </>
-          ) : (
-            <p className="text-muted-foreground text-sm">No data available</p>
-          )}
-        </CardContent>
-      </Card>
+        {/* Payments Ready for Payment Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Payments Ready for Payment</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {readyChartData.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={readyChartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#4f46e5" />
+                  </BarChart>
+                </ResponsiveContainer>
+                <div className="mt-2 flex justify-around text-sm">
+                  {readyChartData.map((item, index) => (
+                    <span key={`ready-${item.name}-${index}`}>
+                      {item.name}: {item.count}
+                    </span>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="text-muted-foreground text-sm">No data available</p>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Parked Payments Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Parked Payments</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {parkedChartData.length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={parkedChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#7c3aed" />
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="mt-2 flex justify-around text-sm">
-                {parkedChartData.map((item, index) => (
-                  <span key={`parked-${item.name}-${index}`}>
-                    {item.name}: {item.count}
-                  </span>
-                ))}
-              </div>
-            </>
-          ) : (
-            <p className="text-muted-foreground text-sm">No data available</p>
-          )}
-        </CardContent>
-      </Card>
+        {/* Parked Payments Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Parked Payments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {parkedChartData.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={parkedChartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#7c3aed" />
+                  </BarChart>
+                </ResponsiveContainer>
+                <div className="mt-2 flex justify-around text-sm">
+                  {parkedChartData.map((item, index) => (
+                    <span key={`parked-${item.name}-${index}`}>
+                      {item.name}: {item.count}
+                    </span>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="text-muted-foreground text-sm">No data available</p>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Parked Payments Aging Report Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Parked Payments Aging Report</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {agingData.length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={agingData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#dc2626" />
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="mt-2 flex justify-around text-sm">
-                {agingData.map((item, index) => (
-                  <span key={`aging-${item.name}-${index}`}>
-                    {item.name}: {item.count}
-                  </span>
-                ))}
-              </div>
-            </>
-          ) : (
-            <p className="text-muted-foreground text-sm">No parked payments</p>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+        {/* Parked Payments Aging Report Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Parked Payments Aging Report</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {agingData.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={agingData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#dc2626" />
+                  </BarChart>
+                </ResponsiveContainer>
+                <div className="mt-2 flex justify-around text-sm">
+                  {agingData.map((item, index) => (
+                    <span key={`aging-${item.name}-${index}`}>
+                      {item.name}: {item.count}
+                    </span>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                No parked payments
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Agency Summary Table */}
+      <div className="mt-6">
+        <AgencySummaryTable
+          agencies={data?.PaymentsByAgency ?? []}
+          selectedAgency={selectedAgency ?? null}
+          onSelectAgency={onSelectAgency ?? (() => {})}
+        />
+      </div>
+    </>
   );
 }
